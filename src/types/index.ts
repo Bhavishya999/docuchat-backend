@@ -2,8 +2,7 @@ export interface Chunk {
   id: string;
   documentId: string;
   documentName: string;
-  text: string;
-  embedding: number[];
+  content: string;
 }
 
 export interface Document {

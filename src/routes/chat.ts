@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { retrieveContext } from '../services/ragPipeline.js';
-import { generateAnswer } from '../services/gemini.js';
-import { getChunkCount } from '../services/vectorStore.js';
+import { generateAnswer } from '../services/aiService.js';
+import { listDocuments } from '../services/vectorStore.js';
 import type { ChatResponse, ErrorResponse } from '../types/index.js';
 
 const chat = new Hono();
@@ -10,7 +10,7 @@ const MIN_QUESTION_LENGTH = 3;
 const MAX_QUESTION_LENGTH = 1000;
 
 chat.post('/', async (c) => {
-  let body: { question?: unknown };
+  let body: { question?: unknown; chatId?: unknown };
   try {
     body = await c.req.json();
   } catch {
@@ -20,7 +20,7 @@ chat.post('/', async (c) => {
   const question = typeof body.question === 'string' ? body.question.trim() : null;
 
   if (!question) {
-    return c.json<ErrorResponse>({ error: '"question" field is required and must be a non-empty string' }, 400);
+    return c.json<ErrorResponse>({ error: '"question" is required and must be a non-empty string' }, 400);
   }
   if (question.length < MIN_QUESTION_LENGTH) {
     return c.json<ErrorResponse>({ error: `Question must be at least ${MIN_QUESTION_LENGTH} characters` }, 400);
@@ -28,14 +28,14 @@ chat.post('/', async (c) => {
   if (question.length > MAX_QUESTION_LENGTH) {
     return c.json<ErrorResponse>({ error: `Question must be under ${MAX_QUESTION_LENGTH} characters` }, 400);
   }
-  if (getChunkCount() === 0) {
-    return c.json<ErrorResponse>({ error: 'No documents have been indexed yet. Upload a document first.' }, 400);
+  if (listDocuments().length === 0) {
+    return c.json<ErrorResponse>({ error: 'No documents uploaded yet. Upload a document first.' }, 400);
   }
 
-  let context: string;
+  let contextText: string;
   let sources: ChatResponse['sources'];
   try {
-    ({ context, sources } = await retrieveContext(question));
+    ({ contextText, sources } = retrieveContext(question));
   } catch (err) {
     console.error('[chat] retrieval error', err);
     return c.json<ErrorResponse>({ error: 'Failed to retrieve relevant context from documents' }, 502);
@@ -43,10 +43,10 @@ chat.post('/', async (c) => {
 
   let answer: string;
   try {
-    answer = await generateAnswer(question, context);
+    answer = await generateAnswer(question, contextText);
   } catch (err) {
     console.error('[chat] generation error', err);
-    return c.json<ErrorResponse>({ error: 'Failed to generate an answer. Check your GEMINI_API_KEY.' }, 502);
+    return c.json<ErrorResponse>({ error: 'Failed to generate an answer. Check your GROQ_API_KEY.' }, 502);
   }
 
   return c.json<ChatResponse>({ answer, sources });
