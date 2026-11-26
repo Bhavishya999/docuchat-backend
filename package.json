@@ -1,0 +1,27 @@
+{
+  "name": "docuchat-backend",
+  "version": "1.0.0",
+  "description": "RAG-powered Document Q&A backend — Node.js + Hono.js + TypeScript + Gemini AI",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.21.0",
+    "@hono/node-server": "^1.13.7",
+    "dotenv": "^16.4.5",
+    "hono": "^4.6.14",
+    "pdf-parse": "^1.1.1",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.5",
+    "@types/pdf-parse": "^1.1.4",
+    "@types/uuid": "^9.0.7",
+    "tsx": "^4.19.1",
+    "typescript": "^5.3.3"
+  }
+}
